@@ -1,14 +1,17 @@
 var sqlite3 = require('sqlite3').verbose();
-const dbsource = 'db.sqlite'
+var md5 = require('md5');
 
-let db = new sqlite3.Database(dbsource, (err) => {
+const DBSOURCE = "db.sqlite"
+
+let db = new sqlite3.Database(DBSOURCE, (err) => {
     if (err) {
         console.log(err.message);
         throw err;
     } else {
         console.log('connected to sqlite database.');
-        db.run(`
-        CREATE TABLE receipts (id integer autoincrement primary key, 
+        db.run(`CREATE TABLE receipts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            receipt_code text,
             company_name text,
             po_box text,
             mobile text,
@@ -27,9 +30,14 @@ let db = new sqlite3.Database(dbsource, (err) => {
             receipt_time text,
             total_excl_of_tax text,
             total_tax text,
-            total_incl_of_tax text)
-        `, (err) => {
-            if (err) {}
+            total_incl_of_tax text
+        )`, 
+        (err) => {
+            if (err) {
+                // Table already created
+            } else {
+                // Table just created, creating some rows
+            }
         });
     }
 });

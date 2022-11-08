@@ -1,12 +1,5 @@
 const puppeteer = require('puppeteer');
 
-// const receiptCode = process.argv[2];
-// const receiptTime = process.argv[3];
-
-// if (!receiptCode || !receiptTime) {
-//     throw 'Either receiptCode or receiptTime is missing!';
-// }
-
 function run (code, time) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -19,32 +12,10 @@ function run (code, time) {
 
             const browser = await puppeteer.launch();
             const page = await browser.newPage();
-            await page.goto(`https://verify.tra.go.tz/${code}_${time}`);
-            await page.screenshot({path: `tra-${code}.png`});
-
-            if (page.url() == "https://verify.tra.go.tz/Home/Index") {
-                // Type into Enter Receipt Verification Code
-                await page.type('.single-line', `${code}`);
-
-                const submitBtn = '.btn-block';
-                await page.waitForSelector(submitBtn);
-                await page.click(submitBtn);
-            }
-
-            if (page.url() == `https://verify.tra.go.tz/${code}`) {
-                // hours
-                page.select('#HH', hrs);
-
-                // minutes
-                page.select('#MM', minutes);
-
-                // seconds
-                page.select('#SS', seconds);
-
-                const submitBtn = '.btn-block';
-                await page.waitForSelector(submitBtn);
-                await page.click(submitBtn);
-            }
+            await page.goto(`https://verify.tra.go.tz/${code}_${time}`, {
+                timeout: 0,
+                waitUntil: 'networkidle2',
+            });
 
             if (page.url() == `https://verify.tra.go.tz/Verify/Verified?Secret=${timeStr}`) {
                 let contents = await page.evaluate(() => {
@@ -121,6 +92,4 @@ function run (code, time) {
         }
     });
 }
-
-// run(receiptCode, receiptTime).then(console.log).catch(console.error);
 module.exports = { run }
