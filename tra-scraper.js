@@ -1,11 +1,11 @@
 const puppeteer = require('puppeteer');
 
-const receiptCode = process.argv[2];
-const receiptTime = process.argv[3];
+// const receiptCode = process.argv[2];
+// const receiptTime = process.argv[3];
 
-if (!receiptCode || !receiptTime) {
-    throw 'Either receiptCode or receiptTime is missing!';
-}
+// if (!receiptCode || !receiptTime) {
+//     throw 'Either receiptCode or receiptTime is missing!';
+// }
 
 function run (code, time) {
     return new Promise(async (resolve, reject) => {
@@ -122,4 +122,5 @@ function run (code, time) {
     });
 }
 
-run(receiptCode, receiptTime).then(console.log).catch(console.error);
+// run(receiptCode, receiptTime).then(console.log).catch(console.error);
+module.exports = { run }
