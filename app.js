@@ -22,7 +22,8 @@ app.get('/receipt/:code/:time', (req, res) => {
             res.json({
                 "message": "success",
                 "data": rows
-            })
+            });
+            return;
         });
 
         run(req.params.code, req.params.time)
