@@ -20,6 +20,7 @@ function run(code, time) {
             if (page.url() == `https://verify.tra.go.tz/Verify/Verified?Secret=${timeStr}`) {
                 let contents = await page.evaluate(() => {
                     let results = [];
+                    let items = [];
 
                     // invoice header section
                     const invoiceHeader = document.querySelectorAll(".invoice-header b");
@@ -58,6 +59,17 @@ function run(code, time) {
                     const receiptTotalTax = invoiceTable[1].children[1].children[1].innerText.trim();
                     const receiptTotalInclOfTax = invoiceTable[1].children[2].children[1].innerText.trim();
 
+                    // items
+                    if (invoiceTable[0].children.length > 0) {
+                        Array.from(invoiceTable[0].children).forEach((item) => {
+                            items.push({
+                                'item_description': item.children[0].innerText.trim(),
+                                'item_qty': item.children[1].innerText.trim(),
+                                'item_amount': item.children[2].innerText.trim()
+                            });
+                        });
+                    }
+
                     results.push({
                         'company_name': companyName,
                         'p_o_box': poBox,
@@ -76,6 +88,7 @@ function run(code, time) {
                         'receipt_date': receiptDate,
                         'receipt_time': receiptTime,
                         'receipt_verification_code': receiptVerificationCode,
+                        'items': items,
                         'receipt_total_excl_of_tax': receiptTotalExclOfTax,
                         'receipt_total_tax': receiptTotalTax,
                         'receipt_total_incl_of_tax': receiptTotalInclOfTax,
