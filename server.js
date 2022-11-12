@@ -24,4 +24,6 @@ app.get('/receipt/:code/:time', (req, res) => {
         .catch(err => res.status(500).send(err))
 })
 
-app.listen(3000, '172.20.10.8')
+app.listen(process.env.PORT || 3000, () => {
+    console.log('server running');
+})
