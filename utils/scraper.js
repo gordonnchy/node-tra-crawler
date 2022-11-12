@@ -10,10 +10,9 @@ const scrapeTra = async (code, time) => {
 
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
-    await page.goto(url, {
-        timeout: 0,
-        waitUntil: 'networkidle0'
-    })
+    await page.goto(url)
+
+    await page.waitForSelector(".invoice-header", {visible: true, timeout: 0})
 
     const scrapedData = await page.evaluate(() => {
         let results = [];
