@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer')
 
 const scrapeTra = async (code, time) => {
+    console.log("start puppeteer " + (new Date()).getTime());
+
     const hrs = time.slice(0, 2)
     const minutes = time.slice(2, 4)
     const seconds = time.slice(4, 6)
@@ -11,10 +13,42 @@ const scrapeTra = async (code, time) => {
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
     await page.goto(url, {
-        waitUntil: 'networkidle0'
+        waitUntil: 'domcontentloaded',
     })
 
-    await page.waitForSelector(".invoice-header", {visible: true, timeout: 0})
+    console.log("start evaluating");
+
+    // await page.screenshot({
+    //     path: 'page1.png'
+    // })
+
+    if (page.url() != `https://verify.tra.go.tz/Verify/Verified?Secret=${timeStr}`) {
+        const input = await page.waitForSelector(".single-line", { visible: true, timeout: 0 })
+
+        if (input != null) {
+            console.log("filling input");
+            await page.type('.single-line', `${code}`);
+            const submitBtn = "button[type='submit']";
+            await page.waitForSelector(submitBtn);
+            await page.click(submitBtn);
+
+            await page.waitForSelector("#HH", { visible: true, timeout: 0 })
+
+            page.select('#HH', hrs);
+            page.select('#MM', minutes);
+            page.select('#SS', seconds);
+
+            const submitBtn2 = "button[type='button']";
+            await page.waitForSelector(submitBtn2);
+            await page.click(submitBtn2);
+        }
+
+        // await page.screenshot({
+        //     path: 'page2.png'
+        // })
+    }
+
+    console.log("required selector available " + (new Date()).getTime());
 
     const scrapedData = await page.evaluate(() => {
         let results = [];
