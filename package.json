@@ -1,6 +1,24 @@
 {
+  "name": "node-tra-crawler",
+  "version": "1.0.0",
+  "description": "Scrape TRA receipts",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "TRA",
+    "heroku",
+    "TRA crawler"
+  ],
+  "author": "Gordon Nchy",
+  "repository": "https://github.com/gordonnchy/node-tra-crawler.git",
   "dependencies": {
     "express": "^4.18.2",
     "puppeteer": "^19.2.2"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
