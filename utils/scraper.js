@@ -11,7 +11,6 @@ const scrapeTra = async (code, time) => {
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
     await page.goto(url, {
-        timeout: 0,
         waitUntil: 'networkidle0'
     })
 
