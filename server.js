@@ -19,9 +19,9 @@ app.get('/receipt/:code/:time', (req, res) => {
 
     Promise.all([traReceipt])
         .then(data => {
-            res.send(data[0])
+            res.send(data[0][0])
         })
         .catch(err => res.status(500).send(err))
 })
 
-app.listen(process.env.PORT || 3000, '172.20.10.8')
+app.listen(3000, '172.20.10.8')
