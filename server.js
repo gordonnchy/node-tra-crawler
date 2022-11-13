@@ -14,7 +14,7 @@ app.get('/receipt/:code/:time', (req, res) => {
             .then(data => {
                 resolve(data);
             })
-            .catch(err => reject('Tra scrape failed'))
+            .catch(err => reject('Tra scrape failed' + err))
     })
 
     Promise.all([traReceipt])
