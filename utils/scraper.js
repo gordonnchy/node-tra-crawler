@@ -11,12 +11,12 @@ const scrapeTra = async (code, time) => {
     const url = `https://verify.tra.go.tz/${code}_${time}`
 
     const browser = await puppeteer.launch({
-        headless: true,
         args: ['--no-sandbox']
     })
     const page = await browser.newPage()
     await page.goto(url, {
-        waitUntil: 'domcontentloaded',
+        timeout: 0,
+        waitUntil: 'networkidle0',
     })
 
     console.log("start evaluating");
