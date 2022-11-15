@@ -90,17 +90,17 @@ const scrapeTra = async (code, time) => {
         const receiptVerificationCode = '';
 
         // prices
-        const receiptTotalExclOfTax = invoiceTable[1].children[0].children[1].innerText.trim();
-        const receiptTotalTax = invoiceTable[1].children[1].children[1].innerText.trim();
-        const receiptTotalInclOfTax = invoiceTable[1].children[2].children[1].innerText.trim();
+        const receiptTotalExclOfTax = parseFloat(invoiceTable[1].children[0].children[1].innerText.trim());
+        const receiptTotalTax = parseFloat(invoiceTable[1].children[1].children[1].innerText.trim());
+        const receiptTotalInclOfTax = parseFloat(invoiceTable[1].children[2].children[1].innerText.trim());
 
         // items
         if (invoiceTable[0].children.length > 0) {
             Array.from(invoiceTable[0].children).forEach((item) => {
                 items.push({
                     'item_description': item.children[0].innerText.trim(),
-                    'item_qty': item.children[1].innerText.trim(),
-                    'item_amount': item.children[2].innerText.trim()
+                    'item_qty': parseInt(item.children[1].innerText.trim()),
+                    'item_amount': parseFloat(item.children[2].innerText.trim())
                 });
             });
         }
