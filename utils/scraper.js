@@ -87,7 +87,7 @@ const scrapeTra = async (code, time) => {
         const zNumber = invoiceHeader[6].nextSibling.textContent.trim();
         const receiptDate = invoiceHeader[7].nextSibling.textContent.trim();
         const receiptTime = invoiceHeader[8].nextSibling.textContent.trim();
-        const receiptVerificationCode = '';
+        const receiptVerificationCode = document.querySelectorAll(".invoice-header")[3].children[1].firstChild.innerText.trim();
 
         // prices
         const receiptTotalExclOfTax = parseFloat(invoiceTable[1].children[0].children[1].innerText.trim().replaceAll(',', ''));
