@@ -92,7 +92,7 @@ const scrapeTra = async (code, time) => {
         // prices
         const receiptTotalExclOfTax = parseFloat(invoiceTable[1].children[0].children[1].innerText.trim().replaceAll(',', ''));
         const receiptTotalTax = parseFloat(invoiceTable[1].children[1].children[1].innerText.trim().replaceAll(',', ''));
-        const receiptTotalInclOfTax = parseFloat(invoiceTable[1].children[2].children[1].innerText.trim().replaceAll(',', ''));
+        const receiptTotalInclOfTax = parseFloat(invoiceTable[1].children[(invoiceTable[1].children.length > 3 ? 3 : 2)].children[1].innerText.trim().replaceAll(',', ''));
 
         // items
         if (invoiceTable[0].children.length > 0) {
