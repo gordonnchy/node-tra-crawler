@@ -1,6 +1,6 @@
 {
-  "name": "node-tra-crawler",
-  "version": "1.0.0",
+  "name": "@gordonnchy/node-tra-crawler",
+  "version": "1.0.1",
   "description": "Scrape TRA receipts",
   "main": "server.js",
   "scripts": {
