@@ -1,29 +1,22 @@
-const express = require('express')
+const bodyParser = require("body-parser");
 
-const scraper = require('./utils/scraper')
-const app = express()
+const express = require('express');
 
-app.get('/', (req, res) => {
-    res.send('Hello, World');
-})
+const scrapeRoute = require("./routes/scrape");
 
-app.get('/receipt/:code/:time', (req, res) => {
-    const traReceipt = new Promise((resolve, reject) => {
-        scraper
-            .scrapeTra(req.params.code, req.params.time)
-            .then(data => {
-                resolve(data);
-            })
-            .catch(err => reject('Tra scrape failed' + err))
-    })
+const app = express();
 
-    Promise.all([traReceipt])
-        .then(data => {
-            res.send(data[0][0])
-        })
-        .catch(err => res.status(500).send(err))
-})
+app.use(bodyParser.urlencoded({extended: false}));
 
-app.listen(process.env.PORT || 3000, () => {
+app.use(scrapeRoute);
+
+app.use((req, res, next) => {
+    res.status(404).send({
+        'status': '404',
+        'message': 'not found',
+    });
+});
+
+app.listen(process.env.PORT || 4000, () => {
     console.log('server running');
-})
+});

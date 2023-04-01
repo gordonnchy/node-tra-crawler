@@ -1,4 +1,82 @@
-const puppeteer = require('puppeteer')
+const puppeteer = require('puppeteer');
+
+const extractInvoiceData = async (page) => {
+    return await page.evaluate(() => {
+        let results = [];
+        let items = [];
+
+        const getText = (el) => el.innerText.trim();
+        const getSiblingText = (el) => el.nextSibling.textContent.trim();
+        const parseFloatWithComma = (val) => parseFloat(val.trim().replaceAll(',', ''));
+
+        const invoiceHeader = document.querySelectorAll(".invoice-header b");
+        const invoiceInfo = document.querySelectorAll(".invoice-info .invoice-col b");
+        const invoiceTable = document.querySelectorAll('.table table.table tbody');
+
+        const company = {
+            'company_name': getText(invoiceHeader[0]),
+            'p_o_box': getText(invoiceInfo[0]),
+            'mobile': getSiblingText(invoiceInfo[1]),
+            'tin': getSiblingText(invoiceInfo[2]),
+            'vrn': getSiblingText(invoiceInfo[3]),
+            'serial_no': getSiblingText(invoiceInfo[4]),
+            'uin': getSiblingText(invoiceInfo[5]),
+            'tax_office': getSiblingText(invoiceInfo[6]),
+        };
+
+        const customer = {
+            'customer_name': getSiblingText(invoiceHeader[1]),
+            'customer_id_type': getSiblingText(invoiceHeader[2]),
+            'customer_id': getSiblingText(invoiceHeader[3]),
+            'customer_mobile': getSiblingText(invoiceHeader[4]),
+        };
+
+        const receipt = {
+            'receipt_number': getSiblingText(invoiceHeader[5]),
+            'receipt_z_number': getSiblingText(invoiceHeader[6]),
+            'receipt_date': getSiblingText(invoiceHeader[7]),
+            'receipt_time': getSiblingText(invoiceHeader[8]),
+            'receipt_verification_code': getText(document.querySelectorAll(".invoice-header")[3].children[1].firstChild),
+        };
+
+        const pricesTable = invoiceTable[1];
+        const noOFRows = pricesTable.children.length;
+        let receiptTotalDiscount = 0;
+
+        const receiptTotalExclOfTax = parseFloatWithComma(getText(pricesTable.children[0].children[1]));
+
+        if (noOFRows === 5) {
+            receiptTotalDiscount = parseFloatWithComma(getText(pricesTable.children[1].children[1]));
+        }
+
+        const receiptTotalTax = parseFloatWithComma(getText(pricesTable.children[noOFRows - 2].children[1]));
+        const receiptTotalInclOfTax = parseFloatWithComma(getText(pricesTable.children[noOFRows - 1].children[1]));
+
+        const itemsTable = invoiceTable[0];
+        if (itemsTable.children.length > 0) {
+            Array.from(itemsTable.children).forEach((item) => {
+                items.push({
+                    'item_description': getText(item.children[0]),
+                    'item_qty': parseInt(getText(item.children[1])),
+                    'item_amount': parseFloatWithComma(getText(item.children[2])),
+                });
+            });
+        }
+
+        results.push({
+            ...company,
+            ...customer,
+            ...receipt,
+            items,
+            receipt_total_excl_of_tax: receiptTotalExclOfTax,
+            receipt_total_discount: receiptTotalDiscount,
+            receipt_total_tax: receiptTotalTax,
+            receipt_total_incl_of_tax: receiptTotalInclOfTax,
+        });
+
+        return results;
+    });
+};
 
 const scrapeTra = async (code, time) => {
     console.log("start puppeteer " + (new Date()).getTime());
@@ -9,31 +87,31 @@ const scrapeTra = async (code, time) => {
 
     const timeStr = `${hrs}:${minutes}:${seconds}`
     const url = `https://verify.tra.go.tz/${code}_${time}`
+    let response = {};
 
-    const browser = await puppeteer.launch({
-        args: ['--no-sandbox']
-    })
-    const page = await browser.newPage()
-    await page.goto(url, {
-        timeout: 0,
-        waitUntil: 'networkidle0',
-    })
+    try {
+        const browser = await puppeteer.launch({
+            args: ['--no-sandbox']
+        });
 
-    console.log("start evaluating");
+        const page = await browser.newPage();
 
-    // await page.screenshot({
-    //     path: 'page1.png'
-    // })
+        await page.goto(url, {
+            timeout: 0,
+            waitUntil: 'networkidle0',
+        });
 
-    if (page.url() != `https://verify.tra.go.tz/Verify/Verified?Secret=${timeStr}`) {
-        const input = await page.waitForSelector(".single-line", { visible: true, timeout: 0 })
+        if (page.url() != `https://verify.tra.go.tz/Verify/Verified?Secret=${timeStr}`) {
+            if (page.url() === 'https://verify.tra.go.tz/Home/Index') {
+                const input = await page.waitForSelector(".single-line", { visible: true, timeout: 0 });
 
-        if (input != null) {
-            console.log("filling input");
-            await page.type('.single-line', `${code}`);
-            const submitBtn = "button[type='submit']";
-            await page.waitForSelector(submitBtn);
-            await page.click(submitBtn);
+                if (input != null) {
+                    await page.type('.single-line', `${code}`);
+                    const submitBtn = "button[type='submit']";
+                    await page.waitForSelector(submitBtn);
+                    await page.click(submitBtn);
+                }
+            }
 
             await page.waitForSelector("#HH", { visible: true, timeout: 0 })
 
@@ -44,105 +122,32 @@ const scrapeTra = async (code, time) => {
             const submitBtn2 = "button[type='button']";
             await page.waitForSelector(submitBtn2);
             await page.click(submitBtn2);
+
+
+            if (page.url() === `https://verify.tra.go.tz/${code}`) {
+                response =  {
+                    'code': '400',
+                    'message': 'Invalid Code or Time'
+                };
+            } else if (page.url() === `https://verify.tra.go.tz/Verify/Verified?Secret=${timeStr}`) {
+                response = await extractInvoiceData(page);
+            } else {
+                response = {
+                    'code': '404',
+                    'message': 'Missing Receipt'
+                }
+            }
+        } else {
+            response = await extractInvoiceData(page);
         }
 
-        // await page.screenshot({
-        //     path: 'page2.png'
-        // })
+        await browser.close();
+
+        return response;
+    } catch (error) {
+        console.error('Error during scraping:', error);
+        return null;
     }
-
-    console.log("required selector available " + (new Date()).getTime());
-
-    const scrapedData = await page.evaluate(() => {
-        let results = [];
-        let items = [];
-
-        // invoice header section
-        const invoiceHeader = document.querySelectorAll(".invoice-header b");
-
-        // invoice info section
-        const invoiceInfo = document.querySelectorAll(".invoice-info .invoice-col b");
-
-        // invoice tables
-        const invoiceTable = document.querySelectorAll('.table table.table tbody');
-
-        // company
-        const companyName = invoiceHeader[0].innerText.trim();
-        const poBox = invoiceInfo[0].innerText.trim();
-        const mobile = invoiceInfo[1].nextSibling.textContent.trim();
-        const tin = invoiceInfo[2].nextSibling.textContent.trim();
-        const vrn = invoiceInfo[3].nextSibling.textContent.trim();
-        const serialNo = invoiceInfo[4].nextSibling.textContent.trim();
-        const uin = invoiceInfo[5].nextSibling.textContent.trim();
-        const taxOffice = invoiceInfo[6].nextSibling.textContent.trim();
-
-        // customer
-        const customerName = invoiceHeader[1].nextSibling.textContent.trim();
-        const customerIdType = invoiceHeader[2].nextSibling.textContent.trim();
-        const customerId = invoiceHeader[3].nextSibling.textContent.trim();
-        const customerMobile = invoiceHeader[4].nextSibling.textContent.trim();
-
-        // receipt
-        const receiptNumber = invoiceHeader[5].nextSibling.textContent.trim();
-        const zNumber = invoiceHeader[6].nextSibling.textContent.trim();
-        const receiptDate = invoiceHeader[7].nextSibling.textContent.trim();
-        const receiptTime = invoiceHeader[8].nextSibling.textContent.trim();
-        const receiptVerificationCode = document.querySelectorAll(".invoice-header")[3].children[1].firstChild.innerText.trim();
-
-        // prices
-        const noOFRows = invoiceTable[1].children.length;
-        let receiptTotalDiscount = 0;
-        
-        const receiptTotalExclOfTax = parseFloat(invoiceTable[1].children[0].children[1].innerText.trim().replaceAll(',', ''));
-        
-        if (noOFRows === 5) {
-            receiptTotalDiscount = parseFloat(invoiceTable[1].children[1].children[1].innerText.trim().replaceAll(',', ''));
-        }
-
-        const receiptTotalTax = parseFloat(invoiceTable[1].children[noOFRows - 2].children[1].innerText.trim().replaceAll(',', ''));
-        const receiptTotalInclOfTax = parseFloat(invoiceTable[1].children[noOFRows - 1].children[1].innerText.trim().replaceAll(',', ''));
-
-        // items
-        if (invoiceTable[0].children.length > 0) {
-            Array.from(invoiceTable[0].children).forEach((item) => {
-                items.push({
-                    'item_description': item.children[0].innerText.trim(),
-                    'item_qty': parseInt(item.children[1].innerText.trim()),
-                    'item_amount': parseFloat(item.children[2].innerText.trim().replaceAll(',', ''))
-                });
-            });
-        }
-
-        results.push({
-            'company_name': companyName,
-            'p_o_box': poBox,
-            'mobile': mobile,
-            'tin': tin,
-            'vrn': vrn,
-            'serial_no': serialNo,
-            'uin': uin,
-            'tax_office': taxOffice,
-            'customer_name': customerName,
-            'customer_id_type': customerIdType,
-            'customer_id': customerId,
-            'customer_mobile': customerMobile,
-            'receipt_number': receiptNumber,
-            'receipt_z_number': zNumber,
-            'receipt_date': receiptDate,
-            'receipt_time': receiptTime,
-            'receipt_verification_code': receiptVerificationCode,
-            'items': items,
-            'receipt_total_excl_of_tax': receiptTotalExclOfTax,
-            'receipt_total_discount': receiptTotalDiscount,
-            'receipt_total_tax': receiptTotalTax,
-            'receipt_total_incl_of_tax': receiptTotalInclOfTax,
-        });
-
-        return results;
-    });
-
-    await browser.close()
-    return scrapedData
-}
+};
 
 module.exports.scrapeTra = scrapeTra
