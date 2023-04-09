@@ -16,6 +16,7 @@
   "repository": "https://github.com/gordonnchy/node-tra-crawler.git",
   "dependencies": {
     "body-parser": "^1.20.2",
+    "ejs": "^3.1.9",
     "express": "^4.18.2",
     "puppeteer": "^19.2.2"
   },

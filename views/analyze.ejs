@@ -1,0 +1,39 @@
+<%- include('includes/head.ejs') %>
+    <main>
+        <canvas id="myChart"></canvas>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const labels = [];
+        const data = [];
+
+        <% if (reqs.length > 0) { %>
+            <% reqs.forEach(req => { %>
+            labels.push('<%= req.ip %>');
+            data.push(<%= req.time %>);
+            <% }) %>
+        <% } %>;
+
+        const ctx = document.getElementById('myChart');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '# of milliseconds',
+                    data: data,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+    <%- include('includes/end.ejs') %>
