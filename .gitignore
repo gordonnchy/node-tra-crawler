@@ -4,4 +4,4 @@ npm-debug.log
 /*.env
 *.png
 *.sqlite
-data/*
+data/*.json
